@@ -2,6 +2,7 @@ import nltk
 import json
 import re
 import pandas as pd
+import pkg_resources
 
 # from nltk.book import *
 from nltk.corpus import stopwords
@@ -10,6 +11,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk import sent_tokenize, word_tokenize, pos_tag
 from nltk.corpus import sentiwordnet as swn
 from nltk.stem.snowball import SnowballStemmer
+from symspellpy import SymSpell
 from contractions import CONTRACTION_MAP
 
 corpus_words = set(nltk.corpus.words.words())
@@ -17,6 +19,9 @@ stop_words = set(stopwords.words('english'))
 
 lemmatizer = WordNetLemmatizer()
 stemmer = SnowballStemmer('english')
+
+sym_spell = SymSpell()
+
 
 
 
@@ -115,7 +120,7 @@ def replace_negations(text):
     return ' '.join(words)
 
 
-print(replace_negations("they didn't count what he did as an accomplishment."))
+# print(replace_negations("they didn't count what he did as an accomplishment."))
 
 
 # print("\n-------- [INFO]: DF.info --------\n{}".format(data_df.info()))
@@ -147,4 +152,89 @@ print(replace_negations("they didn't count what he did as an accomplishment."))
 # print("\n-------- [INFO]: REPLACE CONTRACTIONS --------\n{}".format(ref_text))
 
 
+def penn_to_wn(penntag, return_none=False, default_to_noun=True):
+    tag_dict = {
+        'NN': wn.NOUN,
+        'JJ': wn.ADJ,
+        'VB': wn.VERB,
+        'RB': wn.ADV
+    }
+    try:
+        return tag_dict[penntag[:2]]
+    except:
+        if return_none:
+            return None
+        elif default_to_noun:
+            return wn.NOUN
+        else:
+            return ''
+
+
+
+def sentiment_sentiwordnet(text):
+    print("\n-------- [INFO]: SENTIMENT SENTIWORDNET TESTING --------\n")
+    raw_sentences = sent_tokenize(text)
+    print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(raw_sentences))
+
+    sentiment = 0
+    tokens_count = 0
+
+    for raw_sentence in raw_sentences:
+
+        raw_sentence = expand_contractions(raw_sentence)
+        print("\n-------- [INFO]: EXPAND CONTRACTIONS --------\n{}".format(raw_sentence))
+        raw_sentence = replace_negations(
+            raw_sentence)  # Replacing Negations with Antonyms (Python 3 Text Processing with NLTK 3 Cookbook)
+        print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(raw_sentence))
+
+        tokenizedWords = word_tokenize(raw_sentence)
+        print("\n-------- [INFO]: TOKENIZE TO WORDS --------\n{}".format(tokenizedWords))
+
+        tagged_sentence = pos_tag(tokenizedWords)
+        print("\n-------- [INFO]: POS TAGGING --------\n{}".format(tagged_sentence))
+
+        stopWordsRemoved = [w for w in tagged_sentence if not w[0] in stop_words]
+        print("\n-------- [INFO]: REMOVE STOPWORDS --------\n{}".format(stopWordsRemoved))
+
+        for word, tag in tagged_sentence:
+            wn_tag = penn_to_wn(tag)
+
+            # print("\n#################### -------- [INFO]: STEMMING RESULT -------- ###################\n{}".format(stemmer.stem(word)))
+            # lemma = lemmatizer.lemmatize(stemmer.stem(word), pos=wn_tag)
+            lemma = lemmatizer.lemmatize(word, pos=wn_tag)
+            if not lemma:
+                continue
+
+            synsets = wn.synsets(lemma, pos=wn_tag)
+            if not synsets:
+                print("******************** THERE IS NO SYNSETS for lemma: ( {} ) ******************\n".format(lemma))
+                continue
+
+            synset = synsets[0]
+            swn_synset = swn.senti_synset(synset.name())
+            word_sent = swn_synset.pos_score() - swn_synset.neg_score()
+            print(
+                "\n###########-------- [INFO]: LEMMA AND SENTIMENT SCORE OF LEMMA --------###########\nLemma: {}, Sent Score: {}".format(
+                    lemma, word_sent))
+
+            if word_sent != 0:
+                sentiment += word_sent
+                tokens_count += 1
+
+    if tokens_count == 0:
+        return 0
+    print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment, tokens_count))
+    sentiment = sentiment / tokens_count
+    print("sentiment/tokens_count == {}".format(sentiment))
+
+    if sentiment >= 0.01:
+        return 1
+    if sentiment <= -0.01:
+        return -1
+    return 0
+
+
+sentiment_sentiwordnet(data_df["reviewText"][1])
+
+# def sentiment_analysis(review_text):
 
