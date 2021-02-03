@@ -23,8 +23,6 @@ stemmer = SnowballStemmer('english')
 sym_spell = SymSpell()
 
 
-
-
 # print(nltk.__version__)
 # print(pd.__version__)
 
@@ -52,13 +50,7 @@ pd.set_option('display.max_columns', None)
 # pd.set_option('display.expand_frame_repr', False)
 path = "data/test_data.json"
 
-# ratings = []
 
-# for review in parse(path):
-#     ratings.append(review['overall'])
-
-# print(sum(ratings) / len(ratings))
-#
 data_df = get_df(path)
 
 
@@ -120,31 +112,11 @@ def replace_negations(text):
     return ' '.join(words)
 
 
-# print(replace_negations("they didn't count what he did as an accomplishment."))
-
-
-# print("\n-------- [INFO]: DF.info --------\n{}".format(data_df.info()))
-# print("\n-------- [INFO]: DF.describe --------\n{}".format(data_df.describe()))
-#
-# print("\n-------- [INFO]: DF.columns --------\n{}".format([x for x in data_df.columns.values]))
-#
-# print("\n-------- [INFO]: DF.isnull --------\n{}".format(data_df.isnull().sum()))
-# # print(data_df.head())
-#
-#
-# tokens = nltk.word_tokenize(data_df["reviewText"][1])
-# print("\n-------- [INFO]: RAW TEXT --------\n{}".format(data_df["reviewText"][1]))
-
-
-# print("\n-------- [INFO]: TOKENS --------\n{}".format(tokens))
-#
-# lemmatizer = WordNetLemmatizer()
-# lem_test = lemmatizer.lemmatize("misspelled", pos="v")
-# print("\n-------- [INFO]: LEMMA TEST --------\n{}".format(lem_test))
-# lem_tokens = []
-
-
-# def clean_punctuation:
+def filter_text(text):
+    # Filter only letters and spaces in the text
+    pattern = re.compile(r'[^a-zA-Z ]+')
+    letters_only = re.sub(pattern, '', text)
+    return letters_only
 
 
 # ref_text = expand_contractions("Y'all can't expand contractions I'd think\nI really don't understand how this isn't possible, I haven't been trying hard though")
@@ -166,13 +138,13 @@ def penn_to_wn(penntag, return_none=False, default_to_noun=True):
             return None
         elif default_to_noun:
             return wn.NOUN
-        else:
-            return ''
+
 
 def normalize_sentiment_score(sentiment_sum, tokens_count):
     if tokens_count == 0:
         return 0
-    print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment_sum, tokens_count))
+    print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment_sum,
+                                                                                                tokens_count))
     sentiment = sentiment_sum / tokens_count
     print("sentiment/tokens_count == {}".format(sentiment))
     if sentiment >= 0.01:
@@ -182,30 +154,40 @@ def normalize_sentiment_score(sentiment_sum, tokens_count):
     return 0
 
 
+def normalize_ratings(rating):
+    if rating["overall"] >= 4:
+        return 1
+    elif rating["overall"] <= 2:
+        return -1
+    else:
+        return 0
+
+
 def sentiment_sentiwordnet(text):
     print("\n-------- [INFO]: SENTIMENT SENTIWORDNET TESTING --------\n")
-    raw_sentences = sent_tokenize(text)
-    print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(raw_sentences))
+    original_sentences = sent_tokenize(text)
+    print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(original_sentences))
 
     sentiment_sum = 0
     tokens_count = 0
 
-    for raw_sentence in raw_sentences:
+    for sentence in original_sentences:
 
-        raw_sentence = expand_contractions(raw_sentence)
-        print("\n-------- [INFO]: EXPAND CONTRACTIONS --------\n{}".format(raw_sentence))
-        raw_sentence = replace_negations(
-            raw_sentence)  # Replacing Negations with Antonyms (Python 3 Text Processing with NLTK 3 Cookbook)
-        print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(raw_sentence))
-
-        tokenized_words = word_tokenize(raw_sentence)
+        sentence = expand_contractions(sentence)
+        # print("\n-------- [INFO]: EXPAND CONTRACTIONS --------\n{}".format(sentence))
+        # REMOVE EVERYTHING BUT LETTERS
+        sentence = filter_text(sentence.lower()) # Lowercase the text and filter out elements other than letters
+        sentence = replace_negations(sentence)
+        print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(sentence))
+        tokenized_words = word_tokenize(sentence)
         print("\n-------- [INFO]: TOKENIZE TO WORDS --------\n{}".format(tokenized_words))
-
         tagged_sentence = pos_tag(tokenized_words)
         print("\n-------- [INFO]: POS TAGGING --------\n{}".format(tagged_sentence))
 
+
+
         tagged_sentence_without_stopwords = [w for w in tagged_sentence if not w[0] in stop_words]
-        print("\n-------- [INFO]: REMOVE STOPWORDS --------\n{}".format(tagged_sentence_without_stopwords))
+        # print("\n-------- [INFO]: REMOVE STOPWORDS --------\n{}".format(tagged_sentence_without_stopwords))
 
         for word, tag in tagged_sentence_without_stopwords:
             wn_tag = penn_to_wn(tag)
@@ -218,42 +200,30 @@ def sentiment_sentiwordnet(text):
 
             synsets = wn.synsets(lemma, pos=wn_tag)
             if not synsets:
-                print("******************** THERE IS NO SYNSETS for lemma: ( {} ) ******************\n".format(lemma))
+                # print("******************** THERE IS NO SYNSETS for lemma: ( {} ) ******************\n".format(lemma))
                 continue
 
             synset = synsets[0]
             swn_synset = swn.senti_synset(synset.name())
             word_sent = swn_synset.pos_score() - swn_synset.neg_score()
-            print(
-                "\n###########-------- [INFO]: LEMMA AND SENTIMENT SCORE OF LEMMA --------###########\nLemma: {}, Sent Score: {}".format(
-                    lemma, word_sent))
+            # print("\n###########-------- [INFO]: LEMMA AND SENTIMENT SCORE OF LEMMA --------###########\nLemma: {}, Sent Score: {}".format(lemma, word_sent))
 
             if word_sent != 0:
                 sentiment_sum += word_sent
                 tokens_count += 1
 
     normalize_sentiment_score(sentiment_sum, tokens_count)
-    # if tokens_count == 0:
-    #     return 0
-    # print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment, tokens_count))
-    # sentiment = sentiment / tokens_count
-    # print("sentiment/tokens_count == {}".format(sentiment))
-    #
-    # if sentiment >= 0.01:
-    #     return 1
-    # if sentiment <= -0.01:
-    #     return -1
-    # return 0
 
 
-print(sentiment_sentiwordnet("I don't care. He shouldn't have done that. I haven't received it yet. I am not happy. She isn't consistent."))
-# print(sentiment_sentiwordnet(data_df["reviewText"][25]))
-# print(sentiment_sentiwordnet("I really like the new design of your website! I’m not sure if I like the new design. The new design is awful!"))
-# print(sentiment_sentiwordnet("But, as with so many retail stars, GameStop began to struggle a decade or so ago as gamers, like everybody else, made more of their purchases on the internet, opting for downloaded games or two-day delivery over a visit to the mall."))
+# print(sentiment_sentiwordnet("I don't care. He shouldn't have done that. I haven't received it yet. I am not happy. She isn't consistent."))
+# print(sentiment_sentiwordnet("I am not happy. I am not consistent."))
+# print(sentiment_sentiwordnet(data_df["reviewText"][40]))
+print(sentiment_sentiwordnet("I really like the new design of your website! I’m not sure if I like the new design. The new design is awful!"))
+# print(sentiment_sentiwordnet("But, as with so many retail stars, GameStop began to struggle a decade or so ago as gamers, like everybody elsse, made more of their purchases on the internet, opting for downloaded games or two-day delivery over a visit to the mall."))
 # print(wn.synset)
 
 # sentiment_sentiwordnet(data_df["reviewText"][1])
 
 # def sentiment_analysis(review_text):
 
-# print(data_df["overall"])
+# print(type(data_df["overall"][1]))
