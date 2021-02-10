@@ -117,10 +117,10 @@ def penn_to_wn(penntag, return_none=False, default_to_noun=True):
 def normalize_sentiment_score(sentiment_sum, tokens_count):
     if tokens_count == 0:
         return 0
-    print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment_sum,
-                                                                                                tokens_count))
+    # print("\n-------- [INFO]: FINAL SENT SCORE --------\nSentiment: {}, Token Count: {}".format(sentiment_sum,
+    #                                                                                             tokens_count))
     sentiment = sentiment_sum / tokens_count
-    print("sentiment/tokens_count == {}".format(sentiment))
+    # print("sentiment/tokens_count == {}".format(sentiment))
     if sentiment >= 0.01:
         return 1
     if sentiment <= -0.01:
@@ -138,9 +138,9 @@ def normalize_ratings(rating):
 
 
 def sentiment_analyzer(text):
-    print("\n-------- [INFO]: SENTIMENT SENTIWORDNET TESTING --------\n")
+    # print("\n-------- [INFO]: SENTIMENT SENTIWORDNET TESTING --------\n")
     original_sentences = sent_tokenize(text)
-    print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(original_sentences))
+    # print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(original_sentences))
 
     sentiment_sum = 0
     tokens_count = 0
@@ -152,7 +152,7 @@ def sentiment_analyzer(text):
         # REMOVE EVERYTHING BUT LETTERS
         sentence = filter_text(sentence.lower())  # Lowercase the text and filter out elements other than letters
         sentence = replace_negations(sentence)
-        print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(sentence))
+        # print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(sentence))
         tokenized_words = word_tokenize(sentence)
         # print("\n-------- [INFO]: TOKENIZE TO WORDS --------\n{}".format(tokenized_words))
         tagged_sentence = pos_tag(tokenized_words)
@@ -201,12 +201,14 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 # pd.set_option('display.expand_frame_repr', False)
 path = "data/test_data.json"
-data_df = get_df(path)
-print(data_df)
-data_df = data_df.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName"])
-print(data_df)
-data_df["normalizedRatings"] = data_df.apply(normalize_ratings, axis="columns").drop(columns=["overall"])
+data = get_df(path)
+print(data)
+data = data.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime"])
+print(data)
+data["normalizedRatings"] = data.apply(normalize_ratings, axis="columns")
 # print(data_df.drop(columns=["overall"]))
-print("\n\n{}".format(data_df))
-new_df = assign_sentiments(data_df)
-print("\n\n{}".format(new_df))
+# print("\n\n{}".format(data))
+data_with_sentiments = assign_sentiments(data).drop(columns=["reviewText", "overall"])
+# print("\n\n{}".format(data_with_sentiments))
+
+data_with_sentiments.to_csv("data/test_data_sentiment.csv", encoding="utf-8", index=False)
