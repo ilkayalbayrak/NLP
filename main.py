@@ -2,7 +2,7 @@ import nltk
 import json
 import re
 import pandas as pd
-import pkg_resources
+# import pkg_resources ## for symspell
 
 # from nltk.book import *
 from nltk.corpus import stopwords
@@ -11,8 +11,9 @@ from nltk.stem import WordNetLemmatizer
 from nltk import sent_tokenize, word_tokenize, pos_tag
 from nltk.corpus import sentiwordnet as swn
 from nltk.stem.snowball import SnowballStemmer
-from symspellpy import SymSpell
+# from symspellpy import SymSpell
 from contractions import CONTRACTION_MAP
+from time import process_time
 
 corpus_words = set(nltk.corpus.words.words())
 stop_words = set(stopwords.words('english'))
@@ -20,15 +21,6 @@ stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 stemmer = SnowballStemmer('english')
 
-sym_spell = SymSpell()
-
-
-# print(nltk.__version__)
-# print(pd.__version__)
-
-
-# data = pd.read_json("data/All_Beauty.json", orient="index", lines=True)
-# print(data)
 
 def parse(path):
     with open(path) as file:
@@ -43,15 +35,6 @@ def get_df(path):
         df[i] = d
         i += 1
     return pd.DataFrame.from_dict(df, orient='index')
-
-
-pd.set_option('display.max_columns', None)
-
-# pd.set_option('display.expand_frame_repr', False)
-path = "data/test_data.json"
-
-
-data_df = get_df(path)
 
 
 def expand_contractions(text, contraction_mapping=CONTRACTION_MAP):
@@ -71,10 +54,6 @@ def expand_contractions(text, contraction_mapping=CONTRACTION_MAP):
     expanded_text = re.sub("'", "", expanded_text)
     return expanded_text
 
-
-# for i in tokens:
-#     lem_tokens.append(lemmatizer.lemmatize(i))
-# print(lem_tokens)
 
 def replace(word, pos=None):
     antonyms = set()
@@ -119,11 +98,6 @@ def filter_text(text):
     return letters_only
 
 
-# ref_text = expand_contractions("Y'all can't expand contractions I'd think\nI really don't understand how this isn't possible, I haven't been trying hard though")
-# ref_text = expand_contractions(data_df["reviewText"][1])
-# print("\n-------- [INFO]: REPLACE CONTRACTIONS --------\n{}".format(ref_text))
-
-
 def penn_to_wn(penntag, return_none=False, default_to_noun=True):
     tag_dict = {
         'NN': wn.NOUN,
@@ -163,7 +137,7 @@ def normalize_ratings(rating):
         return 0
 
 
-def sentiment_sentiwordnet(text):
+def sentiment_analyzer(text):
     print("\n-------- [INFO]: SENTIMENT SENTIWORDNET TESTING --------\n")
     original_sentences = sent_tokenize(text)
     print("\n-------- [INFO]: RAW SENTENCES, TOKENIZE REVIEW TO SENTENCES --------\n{}".format(original_sentences))
@@ -176,23 +150,20 @@ def sentiment_sentiwordnet(text):
         sentence = expand_contractions(sentence)
         # print("\n-------- [INFO]: EXPAND CONTRACTIONS --------\n{}".format(sentence))
         # REMOVE EVERYTHING BUT LETTERS
-        sentence = filter_text(sentence.lower()) # Lowercase the text and filter out elements other than letters
+        sentence = filter_text(sentence.lower())  # Lowercase the text and filter out elements other than letters
         sentence = replace_negations(sentence)
         print("\n-------- [INFO]: REPLACE NEGATIONS --------\n{}".format(sentence))
         tokenized_words = word_tokenize(sentence)
-        print("\n-------- [INFO]: TOKENIZE TO WORDS --------\n{}".format(tokenized_words))
+        # print("\n-------- [INFO]: TOKENIZE TO WORDS --------\n{}".format(tokenized_words))
         tagged_sentence = pos_tag(tokenized_words)
-        print("\n-------- [INFO]: POS TAGGING --------\n{}".format(tagged_sentence))
-
-
-
+        # print("\n-------- [INFO]: POS TAGGING --------\n{}".format(tagged_sentence))
         tagged_sentence_without_stopwords = [w for w in tagged_sentence if not w[0] in stop_words]
         # print("\n-------- [INFO]: REMOVE STOPWORDS --------\n{}".format(tagged_sentence_without_stopwords))
 
         for word, tag in tagged_sentence_without_stopwords:
             wn_tag = penn_to_wn(tag)
 
-            # print("\n#################### -------- [INFO]: STEMMING RESULT -------- ###################\n{}".format(stemmer.stem(word)))
+            # print("\n-------- [INFO]: STEMMING RESULT -------- \n{}".format(stemmer.stem(word)))
             # lemma = lemmatizer.lemmatize(stemmer.stem(word), pos=wn_tag)
             lemma = lemmatizer.lemmatize(word, pos=wn_tag)
             if not lemma:
@@ -212,18 +183,30 @@ def sentiment_sentiwordnet(text):
                 sentiment_sum += word_sent
                 tokens_count += 1
 
-    normalize_sentiment_score(sentiment_sum, tokens_count)
+    return normalize_sentiment_score(sentiment_sum, tokens_count)
 
 
-# print(sentiment_sentiwordnet("I don't care. He shouldn't have done that. I haven't received it yet. I am not happy. She isn't consistent."))
-# print(sentiment_sentiwordnet("I am not happy. I am not consistent."))
-# print(sentiment_sentiwordnet(data_df["reviewText"][40]))
-print(sentiment_sentiwordnet("I really like the new design of your website! I’m not sure if I like the new design. The new design is awful!"))
-# print(sentiment_sentiwordnet("But, as with so many retail stars, GameStop began to struggle a decade or so ago as gamers, like everybody elsse, made more of their purchases on the internet, opting for downloaded games or two-day delivery over a visit to the mall."))
-# print(wn.synset)
+def assign_sentiments(data):
+    start = process_time()
+    print("\n\n[INFO] ####----- PROCESS STARTED -----####\n\n")
+    data["sentiment"] = data["reviewText"].apply(sentiment_analyzer)
+    end = process_time()
+    print("[INFO] Elapsed time for creating the sentiment column in seconds: {}".format(end - start))
+    print("\n\n[INFO] ####----- PROCESS ENDED -----####\n\n")
+    return data
 
-# sentiment_sentiwordnet(data_df["reviewText"][1])
 
-# def sentiment_analysis(review_text):
-
-# print(type(data_df["overall"][1]))
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+# pd.set_option('display.expand_frame_repr', False)
+path = "data/test_data.json"
+data_df = get_df(path)
+print(data_df)
+data_df = data_df.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName"])
+print(data_df)
+data_df["normalizedRatings"] = data_df.apply(normalize_ratings, axis="columns").drop(columns=["overall"])
+# print(data_df.drop(columns=["overall"]))
+print("\n\n{}".format(data_df))
+new_df = assign_sentiments(data_df)
+print("\n\n{}".format(new_df))

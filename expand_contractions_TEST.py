@@ -21,7 +21,7 @@ def expand_contractions(text, contraction_mapping=CONTRACTION_MAP):
 
 print(expand_contractions("I shouldn't've put the keys under the carpet."))
 
-# assert expand_contractions("That ain't true.") == 'That is not true.', 'That is not true.'
+# assert expand_contractions("That ain't true.") == 'That is not true.', 'That is not true.' # This is returning "This as not true" instead of "This is not" !--CHECK THE FUNC--!
 assert expand_contractions("Your actions now, doesn't change anything you've done in your past.") == "Your actions now, does not change anything you have done in your past."
 assert expand_contractions("I shouldn't have put the keys under the carpet.") == "I should not have put the keys under the carpet."
 assert expand_contractions("It wasn't meant for you.") == "It was not meant for you."
