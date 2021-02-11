@@ -94,7 +94,7 @@ def replace_negations(text):
 def filter_text(text):
     # Filter only letters and spaces in the text
     pattern = re.compile(r'[^a-zA-Z ]+')
-    letters_only = re.sub(pattern, '', text)
+    letters_only = re.sub(pattern, '', str(text))
     return letters_only
 
 
@@ -129,9 +129,9 @@ def normalize_sentiment_score(sentiment_sum, tokens_count):
 
 
 def normalize_ratings(rating):
-    if rating["overall"] >= 4:
+    if rating >= 4:
         return 1
-    elif rating["overall"] <= 2:
+    elif rating <= 2:
         return -1
     else:
         return 0
@@ -199,16 +199,33 @@ def assign_sentiments(data):
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
+
 # pd.set_option('display.expand_frame_repr', False)
-path = "data/test_data.json"
+path = "data/All_Beauty.json"
+# path = "data/test_data.json"
+
 data = get_df(path)
-print(data)
-data = data.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime"])
-print(data)
-data["normalizedRatings"] = data.apply(normalize_ratings, axis="columns")
-# print(data_df.drop(columns=["overall"]))
-# print("\n\n{}".format(data))
-data_with_sentiments = assign_sentiments(data).drop(columns=["reviewText", "overall"])
+data = data.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime","image", "style"])
+data = data[["overall","reviewText","reviewerID", "asin"]].dropna(how="any", axis=0)
+print("Null data: {}".format(data["reviewText"].isnull().any().sum()))
+print(data.tail())
+data["normalizedRatings"] = data["overall"].apply(normalize_ratings)
+data_with_sentiments = assign_sentiments(data)
+data_with_sentiments = data_with_sentiments.drop(columns=["reviewText", "overall"])
 # print("\n\n{}".format(data_with_sentiments))
 
-data_with_sentiments.to_csv("data/test_data_sentiment.csv", encoding="utf-8", index=False)
+# data_with_sentiments.to_csv("data/test_data_sentiment.csv", encoding="utf-8", index=False)
+data_with_sentiments.to_csv("data/output/new.csv", encoding="utf-8", index=False)
+
+
+# data_with_sentiments.to_csv("data/All_Beauty_sentiment.csv", encoding="utf-8", index=False)
+
+# [INFO] ####----- PROCESS STARTED -----####
+#
+#
+# [INFO] Elapsed time for creating the sentiment column in seconds: 1623.488965441
+#
+#
+# [INFO] ####----- PROCESS ENDED -----####
+#
+
