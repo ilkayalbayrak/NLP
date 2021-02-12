@@ -14,6 +14,7 @@ from nltk.stem.snowball import SnowballStemmer
 # from symspellpy import SymSpell
 from contractions import CONTRACTION_MAP
 from time import process_time
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 corpus_words = set(nltk.corpus.words.words())
 stop_words = set(stopwords.words('english'))
@@ -196,6 +197,16 @@ def assign_sentiments(data):
     return data
 
 
+def accuracy_calculator(normalized_ratings, sentiment_labels):
+    acc = accuracy_score(normalized_ratings, sentiment_labels)
+    cnf_matrix = confusion_matrix(normalized_ratings,sentiment_labels)
+    clf_report = classification_report(normalized_ratings, sentiment_labels)
+    print("\n[INFO] ######----- Report of sentiment analysis w.r.t their ratings -----#####")
+    print("\n[INFO] Accuracy: {}\n".format(acc))
+    print("\n[INFO] Confusion Matrix:\n{}\n".format(cnf_matrix))
+    print("\n[INFO] Classification Report:\n{}\n".format(clf_report))
+
+
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -204,21 +215,26 @@ pd.set_option('display.width', 1000)
 path = "data/All_Beauty.json"
 # path = "data/test_data.json"
 
-data = get_df(path)
-data = data.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime","image", "style"])
-data = data[["overall","reviewText","reviewerID", "asin"]].dropna(how="any", axis=0)
-print("Null data: {}".format(data["reviewText"].isnull().any().sum()))
-print(data.tail())
-data["normalizedRatings"] = data["overall"].apply(normalize_ratings)
-data_with_sentiments = assign_sentiments(data)
-data_with_sentiments = data_with_sentiments.drop(columns=["reviewText", "overall"])
+# data = get_df(path)
+# data = data.drop(
+#     columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime", "image", "style"])
+# data = data[["overall", "reviewText", "reviewerID", "asin"]].dropna(how="any", axis=0)
+# print("Null data: {}".format(data["reviewText"].isnull().any().sum()))
+# print(data.tail())
+# data["normalizedRatings"] = data["overall"].apply(normalize_ratings)
+# # data_with_sentiments = assign_sentiments(data)
+# data_with_sentiments = data_with_sentiments.drop(columns=["reviewText", "overall"])
 # print("\n\n{}".format(data_with_sentiments))
 
 # data_with_sentiments.to_csv("data/test_data_sentiment.csv", encoding="utf-8", index=False)
-data_with_sentiments.to_csv("data/output/new.csv", encoding="utf-8", index=False)
-
+# data_with_sentiments.to_csv("data/output/new.csv", encoding="utf-8", index=False)
 
 # data_with_sentiments.to_csv("data/All_Beauty_sentiment.csv", encoding="utf-8", index=False)
+
+data_with_sentiment = pd.read_csv("data/output/All_Beauty_sentiment_V2.csv")
+# data_with_sentiment = data_with_sentiment.drop()
+print(data_with_sentiment.head())
+accuracy_calculator(data_with_sentiment["normalizedRatings"], data_with_sentiment["sentiment"])
 
 # [INFO] ####----- PROCESS STARTED -----####
 #
@@ -228,4 +244,3 @@ data_with_sentiments.to_csv("data/output/new.csv", encoding="utf-8", index=False
 #
 # [INFO] ####----- PROCESS ENDED -----####
 #
-
