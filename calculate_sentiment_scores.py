@@ -18,7 +18,7 @@ data = data[["overall", "reviewText", "reviewerID", "asin"]].dropna(how="any", a
 data["normalizedRatings"] = data["overall"].apply(normalize_ratings)
 data_with_sentiments = assign_sentiments(data)
 data_with_sentiments = data_with_sentiments.drop(columns=["reviewText", "overall"])
-data_with_sentiments.to_csv("data/output/new.csv", encoding="utf-8", index=False)
+data_with_sentiments.to_csv("data/output/test3.csv", encoding="utf-8", index=False)
 
 # [INFO] ####----- PROCESS STARTED -----####
 #

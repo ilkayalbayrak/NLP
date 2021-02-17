@@ -1,4 +1,15 @@
+
+# Zip files
 All_Beauty.json.gz
+
+# General
 notes.txt
-data/All_Beauty.json
 general_testing.py
+expand_contractions_TEST.py
+spell_check_test.py
+
+# Data files
+data/All_Beauty.json
+data/output/new.csv
+data/output/test2.csv
+data/output/test3.csv
