@@ -2,10 +2,15 @@ import pandas as pd
 from tools import accuracy_calculator
 
 # Load the prepared CSV file
-data_with_sentiment = pd.read_csv("data/output/All_Beauty_sentiment_V2.csv")
+data_with_sentiment = pd.read_csv("data/output/sentiment_neutral_threshold_001.csv")
 # Calculate if the overall rating of the product aligns with its sentiment score
 accuracy_calculator(data_with_sentiment["normalizedRatings"], data_with_sentiment["sentiment"])
 
+
+
+
+
+####--- For All_Beauty_sentiment_V2.csv ---####
 # [INFO] ######----- Report of sentiment analysis w.r.t their ratings -----#####
 #
 # [INFO] Accuracy: 0.639877502385792

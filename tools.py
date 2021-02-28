@@ -44,6 +44,8 @@ def get_df(path):
 
 
 def expand_contractions(text, contraction_mapping=CONTRACTION_MAP):
+    # !-----!
+    # Instead of using a contraction list, this maybe done more efficiently with regex operations
     contractions_pattern = re.compile('({})'.format('|'.join(contraction_mapping.keys())),
                                       flags=re.IGNORECASE | re.DOTALL)
 
@@ -76,6 +78,7 @@ def replace(word, pos=None):
 
 
 def replace_negations(text):
+    #  Replace negations function from the NLTK3 Cookbook
     text = re.findall(r'\w+', text)
     i, j = 0, len(text)
     words = []
@@ -103,6 +106,9 @@ def find_top_spelling_suggestion(text):
 
 
 def spelling_correction(text):
+    # Check if the appear in the words corpus
+    # if they don't, it's possibly a misspelt word,
+    # So, initialize the correction process
     if isinstance(text, str):
         text = re.findall(r'\w+', text)
         checked_word_list = []
@@ -134,7 +140,8 @@ def filter_text(text):
     return letters_only
 
 
-def convert_tags_to_wn_version(penntag, return_none=False, default_to_noun=True):
+def convert_tags_to_wn_version(penn_tag, return_none=False, default_to_noun=True):
+    # Convert the tags of NLTK pos tagger into WordNet ones
     tag_dict = {
         'NN': wn.NOUN,
         'JJ': wn.ADJ,
@@ -142,7 +149,7 @@ def convert_tags_to_wn_version(penntag, return_none=False, default_to_noun=True)
         'RB': wn.ADV
     }
     try:
-        return tag_dict[penntag[:2]]
+        return tag_dict[penn_tag[:2]]
     except:
         if return_none:
             return None
@@ -162,6 +169,8 @@ def normalize_sentiment_score(sentiment_sum, tokens_count):
 
 
 def normalize_ratings(rating):
+    # Convert the 5 star rating in to [-1,0,1]
+    # To make them comparable to sentiment labels
     if rating >= 4:
         return 1
     elif rating <= 2:
@@ -171,6 +180,7 @@ def normalize_ratings(rating):
 
 
 def sentiment_analyzer(text):
+    # Connects all the previous functions under 1 function
     original_sentences = sent_tokenize(text)
 
     sentiment_sum = 0

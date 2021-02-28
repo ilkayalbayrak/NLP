@@ -10,8 +10,6 @@ sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
 dictionary_path = pkg_resources.resource_filename(
     "symspellpy", "frequency_dictionary_en_82_765.txt")
 
-# term_index is the column of the term and count_index is the
-# column of the term frequency
 sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
 
 
@@ -49,10 +47,9 @@ def spelling_correction(text):
         return " ".join(checked_word_list)
 
 
-# input_term = "you can stdy the art in detil and it als shws how a divrse group of artists worked together to crete someting unque and memorable that came out of one persns vison"
-#
-# print("original: ", input_term)
-# top_suggestion = spelling_correction(input_term)
-# # suggestion = suggestions[0].term
-# print("suggestion: ", top_suggestion)
-# # i am already a baseball fan and knew a bit about the negro leagues but i learned a lot more reading this book
+input_term = "i am alredy a bseball fan and knw a bit abot the african legues but i learnd a lot more reding this bok"
+
+print("original: ", input_term)
+top_suggestion = spelling_correction(input_term)
+# suggestion = suggestions[0].term
+print("suggestion: ", top_suggestion)

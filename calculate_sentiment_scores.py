@@ -9,8 +9,8 @@ path = "data/All_Beauty.json"
 # path = "data/test_data.json"
 data = get_df(path)
 
-# Don't drop the "image" column when using the test data,
-# it causes error since there is no "image" column in the test data
+# ---------------------------- Don't drop the "image" column when using the "test data",-------------------------
+# ---------------------it causes an error when there is no "image" column in the test data-------------------------
 data = data.drop(columns=["reviewTime", "verified", "summary", "vote", "style", "reviewerName", "unixReviewTime", "image", "style"])
 data = data[["overall", "reviewText", "reviewerID", "asin"]].dropna(how="any", axis=0)
 
